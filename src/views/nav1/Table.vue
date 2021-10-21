@@ -56,7 +56,7 @@
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.$index, scope.row)">修改</el-button>
           <el-button size="small" type="danger" @click="handleEdit(scope.$index, scope.row)">禁用</el-button>
-          <el-button size="small" @click="handleEdit(scope.$index, scope.row)">角色分配</el-button>
+          <el-button size="small" @click="handleRole(scope.$index, scope.row)">角色分配</el-button>
 
           <!-- <el-button
             type="danger"
@@ -88,9 +88,10 @@
 
     <!--编辑界面-->
     <el-dialog
-      title="编辑"
+      title="角色分配"
       v-model="editFormVisible"
       :close-on-click-modal="false"
+       width="10%"
     >
       <el-form
         :model="editForm"
@@ -98,35 +99,16 @@
         :rules="editFormRules"
         ref="editForm"
       >
-        <el-form-item label="姓名" prop="name">
-          <el-input v-model="editForm.name" auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-radio-group v-model="editForm.sex">
-            <el-radio class="radio" :label="1">男</el-radio>
-            <el-radio class="radio" :label="0">女</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="年龄">
-          <el-input-number
-            v-model="editForm.age"
-            :min="0"
-            :max="200"
-          ></el-input-number>
-        </el-form-item>
-        <el-form-item label="生日">
-          <el-date-picker
-            type="date"
-            placeholder="选择日期"
-            v-model="editForm.birth"
-          ></el-date-picker>
-        </el-form-item>
-        <el-form-item label="地址">
-          <el-input type="textarea" v-model="editForm.addr"></el-input>
-        </el-form-item>
+
+    <el-checkbox-group v-model="role">
+      <el-col :span="24" v-for="(item,index) in roles" :key="index">
+        <el-checkbox :label="item.name"></el-checkbox>
+      </el-col>
+    </el-checkbox-group>
+
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click.native="editFormVisible = false">取消</el-button>
+        <el-button @click.native="editRoleFormVisible = false">取消</el-button>
         <el-button
           type="primary"
           @click.native="editSubmit"
@@ -135,6 +117,9 @@
         >
       </div>
     </el-dialog>
+
+
+  
 
     <!--新增界面-->
     <el-dialog
@@ -222,10 +207,11 @@
 import util from "../../common/js/util";
 //import NProgress from 'nprogress'
 import {
+  getRoleListPage,
   getUserListPage,
   removeUser,
   batchRemoveUser,
-  editUser,
+  editUserRole,
   addUser,
 } from "../../api/api";
 
@@ -243,18 +229,20 @@ export default {
       sels: [], //列表选中列
 
       editFormVisible: false, //编辑界面是否显示
+      editRoleFormVisible:false,
       editLoading: false,
       editFormRules: {
-        name: [{ required: true, message: "请输入姓名", trigger: "blur" }],
+        // name: [{ required: true, message: "请输入姓名", trigger: "blur" }],
       },
+
+
+role:[],
+roles:[],
       //编辑界面数据
       editForm: {
-        id: 0,
-        name: "",
-        sex: -1,
-        age: 0,
-        birth: "",
-        addr: "",
+        id:0,
+        loginName:"",
+        userid:""
       },
 
       addFormVisible: false, //新增界面是否显示
@@ -303,10 +291,23 @@ export default {
 
         this.total = res.data.total;
         //用户信息数组
-        this.users = res.data.records;
+        this.users = res.data;
         this.listLoading = false;
         //NProgress.done();
       });
+    },
+    getRoles(){
+        let that = this;
+        getRoleListPage().then((res) => {
+
+        console.log(res.data.data,"----ddddd");
+        //用户信息数组
+        this.roles = res.data.data;
+        // this.listLoading = false;
+        //NProgress.done();
+      });
+     
+
     },
     //删除
     handleDel: function (index, row) {
@@ -331,6 +332,16 @@ export default {
     },
     //显示编辑界面
     handleEdit: function (index, row) {
+      this.editFormVisible = true;
+      let rowdata=bject.assign({}, row);
+      
+    
+      this.editForm = Object.assign({}, row);
+      this.editForm.id=row.id;
+  
+    },
+      //处理角色
+    handleRole: function (index, row) {
       this.editFormVisible = true;
       this.editForm = Object.assign({}, row);
     },
@@ -357,11 +368,9 @@ export default {
             this.editLoading = true;
             //NProgress.start();
             let para = Object.assign({}, this.editForm);
-            para.birth =
-              !para.birth || para.birth == ""
-                ? ""
-                : util.formatDate.format(new Date(para.birth), "yyyy-MM-dd");
-            editUser(para).then((res) => {
+             para.roles=this.roles;
+                  
+             editUserRole(para).then((res) => {
               this.editLoading = false;
               //NProgress.done();
               this.$message({
@@ -431,6 +440,7 @@ export default {
   },
   mounted() {
     this.getUsers();
+    // this.getRoles();
   },
 };
 </script>

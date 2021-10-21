@@ -4,13 +4,13 @@
     <el-col :span="24" class="toolbar" style="padding-bottom: 0px">
       <el-form :inline="true" :model="filters">
         <el-form-item>
-          <el-input v-model="filters.username" placeholder="角色名称"></el-input>
+          <el-input @change="searchByRoleCode" :v-model="filters.roleCode" placeholder="角色code"></el-input>
         </el-form-item>
           <el-form-item>
-          <el-input v-model="filters.idCard" placeholder="角色code"></el-input>
+          <el-input @change="searchByName" :v-model="filters.name" placeholder="角色名称"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" v-on:click="getRoles">查询</el-button>
+          <el-button type="primary" v-on:click="getRolesByNameOrCode">查询</el-button>
         </el-form-item>
         <el-form-item>
           
@@ -40,7 +40,7 @@
       <el-table-column label="操作" width="250">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.$index, scope.row)">修改</el-button>
-          <el-button type="danger" size="small" @click="handleEdit(scope.$index, scope.row)">删除</el-button>
+          <el-button type="danger" size="small" @click="handleDel(scope.$index, scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -58,31 +58,11 @@
         :rules="editFormRules"
         ref="editForm"
       >
-        <el-form-item label="姓名" prop="name">
+        <el-form-item label="角色code" prop="角色code">
+          <el-input v-model="editForm.roleCode" auto-complete="off"></el-input>
+        </el-form-item>
+          <el-form-item label="角色名称" prop="角色名称">
           <el-input v-model="editForm.name" auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="性别">
-          <el-radio-group v-model="editForm.sex">
-            <el-radio class="radio" :label="1">男</el-radio>
-            <el-radio class="radio" :label="0">女</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="年龄">
-          <el-input-number
-            v-model="editForm.age"
-            :min="0"
-            :max="200"
-          ></el-input-number>
-        </el-form-item>
-        <el-form-item label="生日">
-          <el-date-picker
-            type="date"
-            placeholder="选择日期"
-            v-model="editForm.birth"
-          ></el-date-picker>
-        </el-form-item>
-        <el-form-item label="地址">
-          <el-input type="textarea" v-model="editForm.addr"></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -98,7 +78,7 @@
 
     <!--新增界面-->
     <el-dialog
-      title="添加用户信息"
+      title="添加角色信息"
       v-model="addFormVisible"
       :close-on-click-modal="false"
     >
@@ -108,61 +88,19 @@
         :rules="addFormRules"
         ref="addForm"
       >
-      <!-----------------------------------------第一行 -------------------------------------->
-       <el-row>
-         <el-col :span="12">
-             <el-form-item  label="登录名" prop="login_name">
-                 <el-input v-model="addForm.login_name" auto-complete="off"></el-input>
+    
+        <!-----------------------------------------第一行 -------------------------------------->
+    
+             <el-form-item   label-width="100px" label="角色code" prop="角色code">
+                 <el-input  v-model="addForm.roleCode" auto-complete="off"></el-input>
              </el-form-item>
-         </el-col>
-         <el-col :span="12">
-             <el-form-item  label="姓名" prop="usename">
-                 <el-input v-model="addForm.username" auto-complete="off"></el-input>
-              </el-form-item>
-         </el-col>
-       </el-row>
-
-        <!-----------------------------------------第二行 -------------------------------------->
-      <el-row>
-         <el-col :span="12">
-             <el-form-item  label="身份证号" prop="idCard">
-                 <el-input v-model="addForm.idCard" auto-complete="off"></el-input>
-             </el-form-item>
-         </el-col>
-             <el-col :span="12">
-             <el-form-item  label="性别" prop="gender">
-                 <el-input v-model="addForm.gender" auto-complete="off"></el-input>
-        </el-form-item>
-         </el-col>
-       </el-row>
-        <!-----------------------------------------第三行 -------------------------------------->
-      <el-row>
-         <el-col :span="12">
-             <el-form-item  label="密码" prop="password">
-                 <el-input v-model="addForm.password" auto-complete="off"></el-input>
-             </el-form-item>
-         </el-col>
-             <el-col :span="12">
-             <el-form-item  label="确认密码" prop="repassword">
-                 <el-input v-model="addForm.repassword" auto-complete="off"></el-input>
-        </el-form-item>
-         </el-col>
-       </el-row>
-        <!-----------------------------------------第四行 -------------------------------------->
-              <el-row>
-         <el-col :span="12">
-             <el-form-item label="联系电话" prop="phone">
-                 <el-input v-model="addForm.phone" auto-complete="off"></el-input>
-             </el-form-item>
-         </el-col>
-             <el-col :span="12">
-             <el-form-item  label="联系地址" prop="address">
-                 <el-input v-model="addForm.address" auto-complete="off"></el-input>
+        
+           
+             <el-form-item label-width="100px" label="角色名称" prop="角色名称">
+                 <el-input v-model="addForm.name" auto-complete="off"></el-input>
         </el-form-item>
 
-         </el-col>
-       </el-row>
-
+    
         <!-----------------------------------------第五行行 -------------------------------------->
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -182,11 +120,11 @@
 import util from "../../common/js/util";
 //import NProgress from 'nprogress'
 import {
-  removeUser,
   batchRemoveUser,
-  editUser,
-  addUser,
+  editRole,
   getRoleListPage,
+  addRole,
+  removeRole
 } from "../../api/api";
 
 export default {
@@ -212,10 +150,7 @@ export default {
       editForm: {
         id: 0,
         name: "",
-        sex: -1,
-        age: 0,
-        birth: "",
-        addr: "",
+        roleCode:""
       },
 
       addFormVisible: false, //新增界面是否显示
@@ -225,15 +160,8 @@ export default {
       },
       //新增界面数据
       addForm: {
-        login_name: "",
-        username:"",
-        idCard:"",
-        gender: 0,
-        password:"",
-        repassword:"",
-        phone:"",
-        address:"",
-        status:1
+        roleCode:"",
+        name:""
       },
     };
   },
@@ -263,12 +191,11 @@ export default {
     handleDel: function (index, row) {
       this.$confirm("确认删除该记录吗?", "提示", {
         type: "warning",
-      })
-        .then(() => {
+      }).then(() => {
           this.listLoading = true;
           //NProgress.start();
-          let para = { id: row.id };
-          removeUser(para).then((res) => {
+          let para = { id: row.id,name:row.name,roleCode:row.roleCode};
+          removeRole(para).then((res) => {
             this.listLoading = false;
             //NProgress.done();
             this.$message({
@@ -289,15 +216,8 @@ export default {
     handleAdd: function () {
       this.addFormVisible = true;
       this.addForm = {
-          login_name: "",
-        username:"",
-        idCard:"",
-        gender: 0,
-        password:"",
-        repassword:"",
-        phone:"",
-        address:"",
-        status:1
+        roleCode: "",
+        name:"",
       };
     },
     //编辑
@@ -308,11 +228,8 @@ export default {
             this.editLoading = true;
             //NProgress.start();
             let para = Object.assign({}, this.editForm);
-            para.birth =
-              !para.birth || para.birth == ""
-                ? ""
-                : util.formatDate.format(new Date(para.birth), "yyyy-MM-dd");
-            editUser(para).then((res) => {
+        
+            editRole(para).then((res) => {
               this.editLoading = false;
               //NProgress.done();
               this.$message({
@@ -339,7 +256,7 @@ export default {
               !para.birth || para.birth == ""
                 ? ""
                 : util.formatDate.format(new Date(para.birth), "yyyy-MM-dd");
-            addUser(para).then((res) => {
+            addRole(para).then((res) => {
               this.addLoading = false;
               //NProgress.done();
               this.$message({
@@ -357,6 +274,28 @@ export default {
     selsChange: function (sels) {
       this.sels = sels;
     },
+
+    //根据条件进行查询
+    getRolesByNameOrCode: function(){
+
+           search(para).then((res) => {
+             alert(res);
+           });
+    },
+
+   searchByRoleCode(x){
+       
+    
+       
+   },
+
+   searchByName(x){
+       
+        this.roles.filter(e=>{
+          return e.roleCode==x
+        })
+   },
+
     //批量删除
     batchRemove: function () {
       var ids = this.sels.map((item) => item.id).toString();
@@ -381,7 +320,7 @@ export default {
     },
   },
   mounted() {
-    // this.getRoles();
+  
     this.getRoles();
   },
 };

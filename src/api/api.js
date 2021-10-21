@@ -26,8 +26,6 @@ export const getUserList = params => {
   
   return axios.post(`/api/v1/list`,params).then(res => res.data); };
 
-// 得到用户列表
-// export const getUserListPage = params => { return axios.get(`/api/user/list`, { params: params }); };
 
 export const getUserListPage = params => { return axios.post(`/api/v1/user/`, params).then(res => res.data); };
 
@@ -39,12 +37,22 @@ export const editUser = params => { return axios.get(`${base}/user/edit`, { para
 
 
 //添加用户信息
-export const addUser = params => { 
-  console.log(params,"添加用户信息")
-  // return axios.post(`/api/v1/user/add`, { params: params }); 
-  return axios.post(`/api/v1/user/add`,params).then(res => res.data)
-};
+export const addUser = params => { return axios.post(`/api/v1/user/add`,params).then(res => res.data)};
+
+// 编辑用户角色
+export const editUserRole = params => { return axios.post(`/api/v1/user/editUserRole`, params); };
+
 
 
 // 角色相关api
 export const getRoleListPage = params => { return axios.post(`/api/v1/role/`, params );};
+
+export const addRole = params => { return axios.post(`/api/v1/role/add`,  params); };
+
+export const removeRole = params => { console.log(params); return axios.get(`/api/v1/role/del`, { params: params }); };
+
+export const editRole = params => { return axios.post(`/api/v1/role/update`,  params); };
+
+export const searchFilter = params => { return axios.post(`/api/v1/role/search`,  params); };
+
+
