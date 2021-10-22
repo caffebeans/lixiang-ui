@@ -21,13 +21,13 @@ export const requestLogin = params => {
 
     // 得到用户信息
 // export const getUserList = params => { return axios.get(`/api/user/list`, { params: params }); };
-export const getUserList = params => {
-  console.log(params)
+// export const getUserList = params => {
+//   console.log(params)
   
-  return axios.post(`/api/v1/list`,params).then(res => res.data); };
+//   return axios.post(`/api/v1/list`,params).then(res => res.data); };
 
 
-export const getUserListPage = params => { return axios.post(`/api/v1/user/`, params).then(res => res.data); };
+export const getUserListPage = params => { return axios.get(`/api/v1/user/`, {params:params}).then(res => res.data); };
 
 export const removeUser = params => { return axios.get(`${base}/user/remove`, { params: params }); };
 
@@ -41,6 +41,10 @@ export const addUser = params => { return axios.post(`/api/v1/user/add`,params).
 
 // 编辑用户角色
 export const editUserRole = params => { return axios.post(`/api/v1/user/editUserRole`, params); };
+
+// 用户禁用
+export const UserBanUser = params => { return axios.get(`/api/v1/user/banUserById`, {params:params});};
+
 
 
 

@@ -55,7 +55,7 @@
       <el-table-column label="操作" width="250">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.$index, scope.row)">修改</el-button>
-          <el-button size="small" type="danger" @click="handleEdit(scope.$index, scope.row)">禁用</el-button>
+          <el-button size="small" type="danger" @click="handleNoUser(scope.$index, scope.row)">禁用</el-button>
           <el-button size="small" @click="handleRole(scope.$index, scope.row)">角色分配</el-button>
 
           <!-- <el-button
@@ -70,23 +70,27 @@
 
     <!--工具条-->
     <el-col :span="24" class="toolbar">
-      <el-button
+      <!-- <el-button
         type="danger"
         @click="batchRemove"
         :disabled="this.sels.length === 0"
         >批量删除</el-button
-      >
-      <el-pagination
-        layout="prev, pager, next"
-        @current-change="handleCurrentChange"
-        :page-size="20"
-        :total="total"
-        style="float: right"
-      >
-      </el-pagination>
+      > -->
+
+   <el-pagination
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+  
+      :page-sizes=this.page_sizes
+      :page-size="100"
+      layout="sizes, prev, pager, next"
+      :total="1000">
+ 
+</el-pagination>
+    
     </el-col>
 
-    <!--编辑界面-->
+    <!--编辑角色界面-->
     <el-dialog
       title="角色分配"
       v-model="editFormVisible"
@@ -106,9 +110,9 @@
       </el-col>
     </el-checkbox-group>
 
-      </el-form>
+      </el-form> 
       <div slot="footer" class="dialog-footer">
-        <el-button @click.native="editRoleFormVisible = false">取消</el-button>
+        <el-button @click.native="handleRoleEditVisable">取消</el-button>
         <el-button
           type="primary"
           @click.native="editSubmit"
@@ -118,8 +122,6 @@
       </div>
     </el-dialog>
 
-
-  
 
     <!--新增界面-->
     <el-dialog
@@ -137,7 +139,7 @@
        <el-row>
          <el-col :span="12">
              <el-form-item  label="登录名" prop="login_name">
-                 <el-input v-model="addForm.login_name" auto-complete="off"></el-input>
+                 <el-input v-model="addForm.loginName" auto-complete="off"></el-input>
              </el-form-item>
          </el-col>
          <el-col :span="12">
@@ -155,21 +157,21 @@
              </el-form-item>
          </el-col>
              <el-col :span="12">
-             <el-form-item  label="性别" prop="gender">
-                 <el-input v-model="addForm.gender" auto-complete="off"></el-input>
+             <el-form-item   label="性别" prop="gender">
+                 <el-input   v-model="addForm.gender" auto-complete="off"></el-input>
         </el-form-item>
          </el-col>
        </el-row>
         <!-----------------------------------------第三行 -------------------------------------->
       <el-row>
          <el-col :span="12">
-             <el-form-item  label="密码" prop="password">
-                 <el-input v-model="addForm.password" auto-complete="off"></el-input>
+             <el-form-item label="密码" prop="password">
+                 <el-input type="password"  v-model="addForm.password" auto-complete="off"></el-input>
              </el-form-item>
          </el-col>
              <el-col :span="12">
              <el-form-item  label="确认密码" prop="repassword">
-                 <el-input v-model="addForm.repassword" auto-complete="off"></el-input>
+                 <el-input type="password"  v-model="addForm.repassword" auto-complete="off"></el-input>
         </el-form-item>
          </el-col>
        </el-row>
@@ -213,6 +215,7 @@ import {
   batchRemoveUser,
   editUserRole,
   addUser,
+  UserBanUser
 } from "../../api/api";
 
 export default {
@@ -223,11 +226,15 @@ export default {
         idCard:""
       },
       users: [],
-      total: 0,
-      page: 1,
+     
       listLoading: false,
       sels: [], //列表选中列
-
+       page_sizes:[
+        5,10,20,30,40,50
+       ],
+       currentPageSize:10,    //默认情况下每页的个显示个数
+       currentPage: 1,        //当前第几页
+       total:0,               //总共的数据量
       editFormVisible: false, //编辑界面是否显示
       editRoleFormVisible:false,
       editLoading: false,
@@ -252,16 +259,17 @@ roles:[],
       },
       //新增界面数据
       addForm: {
-        login_name: "",
+        loginName: "",
         username:"",
         idCard:"",
-        gender: 0,
+        gender:'',
         password:"",
         repassword:"",
         phone:"",
         address:"",
         status:1
       },
+      
     };
   },
   methods: {
@@ -271,18 +279,16 @@ roles:[],
     },
      //性别显示转换
     formatStatus: function (row, column) {
-      return row.gender == 1 ? "正常" : row.gender == 0 ? "禁用" : "未知";
+      return row.status == 1 ? "正常" : row.status == 0 ? "禁用" : "未知";
     },
-    handleCurrentChange(val) {
-      this.page = val;
-      this.getUsers();
-    },
+
     //获取用户列表
     getUsers() {
       let para = {
-        page: this.page,
-        name: this.filters.name,
+        page: this.currentPage,
+        currentPageSize:this.currentPageSize
       };
+       console.log(para,"///..")
       this.listLoading = true;
       //NProgress.start();
       getUserListPage(para).then((res) => {
@@ -291,7 +297,7 @@ roles:[],
 
         this.total = res.data.total;
         //用户信息数组
-        this.users = res.data;
+        this.users = res.data.records;
         this.listLoading = false;
         //NProgress.done();
       });
@@ -299,15 +305,12 @@ roles:[],
     getRoles(){
         let that = this;
         getRoleListPage().then((res) => {
-
-        console.log(res.data.data,"----ddddd");
         //用户信息数组
         this.roles = res.data.data;
         // this.listLoading = false;
         //NProgress.done();
       });
      
-
     },
     //删除
     handleDel: function (index, row) {
@@ -332,27 +335,29 @@ roles:[],
     },
     //显示编辑界面
     handleEdit: function (index, row) {
-      this.editFormVisible = true;
-      let rowdata=bject.assign({}, row);
-      
-    
-      this.editForm = Object.assign({}, row);
-      this.editForm.id=row.id;
+      this.addFormVisible = true;
+      // let rowdata=bject.assign({}, row);
+      this.addForm = Object.assign({}, row);
+      if(this.addForm.gender==1) this.addForm.gender='男'
+      else this.addForm.gender='女'
+      console.log(this.addForm,"要修改的用户数据")
   
     },
       //处理角色
     handleRole: function (index, row) {
       this.editFormVisible = true;
+      this.getRoles();
       this.editForm = Object.assign({}, row);
+       
     },
     //显示新增界面
     handleAdd: function () {
       this.addFormVisible = true;
       this.addForm = {
-          login_name: "",
+       login_name: "",
         username:"",
         idCard:"",
-        gender: 0,
+        gender:'',
         password:"",
         repassword:"",
         phone:"",
@@ -360,7 +365,7 @@ roles:[],
         status:1
       };
     },
-    //编辑
+    //编辑角色信息
     editSubmit: function () {
       this.$refs.editForm.validate((valid) => {
         if (valid) {
@@ -384,19 +389,51 @@ roles:[],
           });
         }
       });
+ 
     },
-    //新增
+    // 处理禁用 用户禁止使用
+    handleNoUser(index,row){
+
+         let para={
+           login_name:row.loginName
+         }
+         UserBanUser(para).then((res)=>{
+            if(res.status==200){
+               this.$message({
+                 message:"用户禁用成功",
+                 type:"success"
+               });  
+               getUsers(); 
+            }else{
+                this.$message({
+                 message:"操作失败",
+                 type:"error"
+               }); 
+            }
+
+         });
+         this.users=this.getUsers();
+
+    },
+
+
+    handleRoleEditVisable(){
+        this.editFormVisible = false;
+    },
+
+    //添加新的用户信息
     addSubmit: function () {
-      this.$refs.addForm.validate((valid) => {
+    
+      this.$refs.addForm.validate((valid) => {       
         if (valid) {
           this.$confirm("确认提交吗？", "提示", {}).then(() => {
             this.addLoading = true;
             //NProgress.start();
             let para = Object.assign({}, this.addForm);
-            para.birth =
-              !para.birth || para.birth == ""
-                ? ""
-                : util.formatDate.format(new Date(para.birth), "yyyy-MM-dd");
+            if(para.gender=='男') para.gender='1'
+             if(para.gender=='女') para.gender='0'
+
+
             addUser(para).then((res) => {
               this.addLoading = false;
               //NProgress.done();
@@ -415,6 +452,20 @@ roles:[],
     selsChange: function (sels) {
       this.sels = sels;
     },
+
+    // 每页数量的改变
+    handleSizeChange(val){
+      this.currentPageSize=val;
+        this.getUsers();
+    },
+
+    //页数改变了
+    handleCurrentChange(val) {
+    
+      this.page = val;
+      this.getUsers();
+    },
+    
     //批量删除
     batchRemove: function () {
       var ids = this.sels.map((item) => item.id).toString();
@@ -440,7 +491,7 @@ roles:[],
   },
   mounted() {
     this.getUsers();
-    // this.getRoles();
+   
   },
 };
 </script>
