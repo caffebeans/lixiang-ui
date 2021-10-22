@@ -40,10 +40,13 @@ export const editUser = params => { return axios.get(`${base}/user/edit`, { para
 export const addUser = params => { return axios.post(`/api/v1/user/add`,params).then(res => res.data)};
 
 // 编辑用户角色
-export const editUserRole = params => { return axios.post(`/api/v1/user/editUserRole`, params); };
+export const editUserRole = params => { console.log(params,"ddd"); return axios.post(`/api/v1/user/editUserRole`, params); };
 
 // 用户禁用
 export const UserBanUser = params => { return axios.get(`/api/v1/user/banUserById`, {params:params});};
+
+//根据用户名或者idCard进行用户查询 
+export const getOneUser = params => { return axios.get(`/api/v1/user/searchByUserNameOrId`, {params:params});};
 
 
 

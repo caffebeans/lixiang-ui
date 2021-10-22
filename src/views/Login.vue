@@ -31,7 +31,7 @@
       <el-button
         type="primary"
         style="width: 100%"
-        @click.native.prevent="handleSubmit2"
+        @click.native.prevent="handleSubmit"
         :loading="logining"
         >登录</el-button
       >
@@ -67,7 +67,7 @@ export default {
     handleReset2() {
       this.$refs.ruleForm2.resetFields();
     },
-    handleSubmit2(ev) {
+    handleSubmit(ev) {
       var _this = this;
       this.$refs.ruleForm2.validate((valid) => {
         if (valid) {
@@ -77,25 +77,17 @@ export default {
             username: this.ruleForm2.account,
             password: this.ruleForm2.checkPass,
           };
-          requestLogin(loginParams).then((data) => {
+          requestLogin(loginParams).then((res) => {
             this.logining = false;
-            console.log("返回的数据 "+data);
-
-            let { message, code, user } = data;
-           
-
-            console.log(message);
-            console.log(user);
-            console.log(code);
-
+            console.log(res.data);
+            let { msg, code, data } = res;
             if (code !== 200) {
               this.$message({
-                message: message,
+                message: msg,
                 type: "error",
               });
             } else {
               
-               
               // sessionStorage.setItem("user", JSON.stringify(user));
               sessionStorage.setItem("user","{}")
               console.log("登陆成功了");
